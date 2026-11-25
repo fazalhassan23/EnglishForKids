@@ -1,0 +1,28 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# Next.js
+/.next
+/out
+
+# test output
+/coverage
+/playwright-report
+/test-results
+*.tsbuildinfo
+
+
+# local configuration and databases
+.env
+.env.local
+*.db
+*.db-journal
+
+# generated Prisma client
+/src/generated/
+
+# system files
+.DS_Store
+Thumbs.db

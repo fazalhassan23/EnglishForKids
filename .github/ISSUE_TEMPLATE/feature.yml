@@ -1,0 +1,21 @@
+name: Feature
+description: Propose a scoped product or engineering feature.
+title: "feat: "
+labels: ["feature", "triage"]
+body:
+  - type: textarea
+    attributes:
+      label: Background and objective
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Scope and acceptance criteria
+      description: Include measurable behavior and explicit exclusions.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Risks, dependencies, privacy, and testing
+    validations:
+      required: true

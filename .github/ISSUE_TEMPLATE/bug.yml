@@ -1,0 +1,21 @@
+name: Bug report
+description: Report a reproducible defect.
+title: "fix: "
+labels: ["bug", "triage"]
+body:
+  - type: textarea
+    attributes:
+      label: Environment and reproduction steps
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Evidence and impact
+      description: Add logs or screenshots only when safe to share.
+    validations:
+      required: true

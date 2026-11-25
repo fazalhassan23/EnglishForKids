@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT
+  TEACHER
+  ADMIN
+}
+
+enum PublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ActivityStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum ConsentType {
+  AUDIO_RECORDING
+  AI_ASSISTANCE
+  DATA_PROCESSING
+}
+
+model User {
+  id                  String                     @id @default(uuid())
+  email               String                     @unique
+  passwordHash        String?
+  displayName         String
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  roles               UserRole[]
+  children            ParentChildRelationship[]  @relation("Parent")
+  consentRecords      ConsentRecord[]
+  auditEvents         AuditLog[]                 @relation("ActorAuditEvents")
+}
+
+model UserRole {
+  userId String
+  role   Role
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, role])
+}
+
+model StudentProfile {
+  id                String                     @id @default(uuid())
+  preferredName     String
+  birthDate         DateTime?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  parents           ParentChildRelationship[]
+  enrollments       Enrollment[]
+  lessonProgress    LessonProgress[]
+  activityAttempts  ActivityAttempt[]
+  skillMastery      SkillMastery[]
+  consentRecords    ConsentRecord[]
+}
+
+model ParentChildRelationship {
+  parentId  String
+  studentId String
+  createdAt DateTime       @default(now())
+  parent    User           @relation("Parent", fields: [parentId], references: [id], onDelete: Cascade)
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  @@id([parentId, studentId])
+  @@index([studentId])
+}
+
+model Level {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  title       String
+  description String?
+  sortOrder   Int
+  courses     Course[]
+  enrollments Enrollment[]
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  levelId     String
+  slug        String   @unique
+  title       String
+  description String?
+  sortOrder   Int
+  level       Level    @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  units       Unit[]
+  @@index([levelId, sortOrder])
+}
+
+model Unit {
+  id        String   @id @default(uuid())
+  courseId  String
+  title     String
+  sortOrder Int
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lessons   Lesson[]
+  @@index([courseId, sortOrder])
+}
+
+model Lesson {
+  id                String              @id @default(uuid())
+  unitId            String
+  slug              String              @unique
+  title             String
+  learningObjectives Json
+  estimatedMinutes  Int
+  status            PublicationStatus  @default(DRAFT)
+  version           Int                 @default(1)
+  unit              Unit                @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  activities        Activity[]
+  skills            LessonSkill[]
+  progress          LessonProgress[]
+  revisions         ContentRevision[]
+  @@index([unitId, status])
+}
+
+model Skill {
+  id          String         @id @default(uuid())
+  code        String         @unique
+  title       String
+  description String?
+  lessons     LessonSkill[]
+  mastery     SkillMastery[]
+}
+
+model LessonSkill {
+  lessonId String
+  skillId  String
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  skill    Skill  @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  @@id([lessonId, skillId])
+}
+
+model Activity {
+  id             String            @id @default(uuid())
+  lessonId       String
+  templateKey    String
+  configuration  Json
+  sortOrder      Int
+  lesson         Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions      Question[]
+  attempts       ActivityAttempt[]
+  @@index([lessonId, sortOrder])
+}
+
+model Question {
+  id              String           @id @default(uuid())
+  activityId      String
+  prompt          Json
+  explanation     String?
+  correctAnswer   Json
+  activity        Activity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  answerOptions   AnswerOption[]
+  responses       StudentResponse[]
+}
+
+model AnswerOption {
+  id         String   @id @default(uuid())
+  questionId String
+  label      String
+  value      String
+  sortOrder  Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@index([questionId, sortOrder])
+}
+
+model Enrollment {
+  studentId String
+  levelId   String
+  createdAt DateTime       @default(now())
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  level     Level          @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  @@id([studentId, levelId])
+}
+
+model LessonProgress {
+  studentId   String
+  lessonId    String
+  completedAt DateTime?
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson      Lesson         @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  @@id([studentId, lessonId])
+}
+
+model ActivityAttempt {
+  id          String         @id @default(uuid())
+  studentId   String
+  activityId  String
+  status      ActivityStatus @default(IN_PROGRESS)
+  score       Float?
+  startedAt   DateTime       @default(now())
+  completedAt DateTime?
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  activity    Activity       @relation(fields: [activityId], references: [id], onDelete: Restrict)
+  responses   StudentResponse[]
+  @@index([studentId, activityId, startedAt])
+}
+
+model StudentResponse {
+  id          String          @id @default(uuid())
+  attemptId   String
+  questionId  String
+  response    Json
+  isCorrect   Boolean
+  createdAt   DateTime        @default(now())
+  attempt     ActivityAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    Question        @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model SkillMastery {
+  studentId        String
+  skillId          String
+  correctResponses Int            @default(0)
+  totalResponses   Int            @default(0)
+  updatedAt        DateTime       @updatedAt
+  student          StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skill            Skill          @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  @@id([studentId, skillId])
+}
+
+model ConsentRecord {
+  id          String         @id @default(uuid())
+  studentId   String
+  grantedById String
+  type        ConsentType
+  grantedAt   DateTime       @default(now())
+  revokedAt   DateTime?
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  grantedBy   User           @relation(fields: [grantedById], references: [id], onDelete: Restrict)
+  @@index([studentId, type, revokedAt])
+}
+
+model ContentRevision {
+  id        String            @id @default(uuid())
+  lessonId  String
+  version   Int
+  snapshot  Json
+  status    PublicationStatus
+  createdAt DateTime          @default(now())
+  lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  @@unique([lessonId, version])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("ActorAuditEvents", fields: [actorId], references: [id], onDelete: SetNull)
+  @@index([entityType, entityId, createdAt])
+}

@@ -9,25 +9,24 @@
   --focus: #b53a00;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  background: var(--canvas);
-}
-
-body {
-  margin: 0;
-  color: var(--ink);
-  background: var(--canvas);
-  font-family: Arial, Helvetica, sans-serif;
-  line-height: 1.5;
-}
-
-:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 3px;
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    background: var(--canvas);
+  }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--canvas);
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+  }
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
 }
 
 .shell {
@@ -84,5 +83,7 @@ li + li {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

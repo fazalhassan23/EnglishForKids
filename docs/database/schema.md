@@ -11,7 +11,7 @@ Lesson ↔ Skill; StudentProfile ↔ SkillMastery
 StudentProfile → ActivityAttempt → StudentResponse
 ```
 
-Curriculum records are structured and publication-aware. `ContentRevision` snapshots provide traceability for lesson changes. `ConsentRecord` stores revocable consent for optional processing such as recordings and AI assistance. `AuditLog` records sensitive administrative actions.
+Curriculum records are structured and publication-aware. Questions map to individual skills so responses can update mastery without attributing every answer to every lesson skill. `ContentRevision` snapshots provide traceability for lesson changes. `ConsentRecord` stores revocable, policy-versioned consent for optional processing such as recordings and AI assistance. `AuditLog` records sensitive administrative actions.
 
 ## Migration policy
 

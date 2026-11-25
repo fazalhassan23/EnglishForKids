@@ -13,7 +13,7 @@ export default function HomePage() {
         <p className="lede">
           A safe, structured learning journey from first letters to confident English.
         </p>
-        <p className="notice" role="status">
+        <p className="notice">
           The product foundation is being prepared. Learning content is not yet available.
         </p>
       </section>

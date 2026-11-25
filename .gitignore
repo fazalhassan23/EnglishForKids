@@ -15,8 +15,8 @@
 
 
 # local configuration and databases
-.env
-.env.local
+.env*
+!.env.example
 *.db
 *.db-journal
 

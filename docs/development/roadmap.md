@@ -4,6 +4,10 @@
 
 Establish repository governance, CI, architecture, Prisma schema, documentation, and accessible application shell. Done when quality gates pass and the schema validates.
 
+### Known release blocker
+
+The current Prisma 6 CLI dependency chain has unresolved high-severity `npm audit` advisories. A Prisma 7 upgrade requires a separately reviewed configuration migration and must be completed before production release or before making dependency audit a blocking CI gate.
+
 ## Milestone 2 — Parent and student accounts
 
 Implement parent registration, session management, child profiles, consent controls, owner-scoped authorization, and protected dashboard shell.

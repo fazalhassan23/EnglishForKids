@@ -2,8 +2,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const schemaValidationUrl =
-  process.env.DATABASE_URL ??
-  "postgresql://validation_user:validation_password@localhost:5432/english_learning_platform";
+  process.env.DATABASE_URL?.trim() || "postgresql://localhost:5432/schema_validation";
 const prismaCliPath = fileURLToPath(
   new URL("../node_modules/prisma/build/index.js", import.meta.url),
 );

@@ -35,6 +35,7 @@ enum ConsentType {
 model User {
   id                  String                     @id @default(uuid())
   email               String                     @unique
+  emailVerifiedAt     DateTime?
   passwordHash        String?
   displayName         String
   createdAt           DateTime                   @default(now())
@@ -42,6 +43,8 @@ model User {
   roles               UserRole[]
   children            ParentChildRelationship[]  @relation("Parent")
   consentRecords      ConsentRecord[]
+  revokedConsents     ConsentRecord[]            @relation("RevokedConsent")
+  contentRevisions    ContentRevision[]
   auditEvents         AuditLog[]                 @relation("ActorAuditEvents")
 }
 
@@ -55,7 +58,7 @@ model UserRole {
 model StudentProfile {
   id                String                     @id @default(uuid())
   preferredName     String
-  birthDate         DateTime?
+  ageBand           String?
   createdAt         DateTime                   @default(now())
   updatedAt         DateTime                   @updatedAt
   parents           ParentChildRelationship[]
@@ -70,7 +73,7 @@ model ParentChildRelationship {
   parentId  String
   studentId String
   createdAt DateTime       @default(now())
-  parent    User           @relation("Parent", fields: [parentId], references: [id], onDelete: Cascade)
+  parent    User           @relation("Parent", fields: [parentId], references: [id], onDelete: Restrict)
   student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   @@id([parentId, studentId])
   @@index([studentId])
@@ -115,6 +118,7 @@ model Lesson {
   title             String
   learningObjectives Json
   estimatedMinutes  Int
+  sortOrder         Int
   status            PublicationStatus  @default(DRAFT)
   version           Int                 @default(1)
   unit              Unit                @relation(fields: [unitId], references: [id], onDelete: Restrict)
@@ -131,6 +135,7 @@ model Skill {
   title       String
   description String?
   lessons     LessonSkill[]
+  questions   QuestionSkill[]
   mastery     SkillMastery[]
 }
 
@@ -160,9 +165,20 @@ model Question {
   prompt          Json
   explanation     String?
   correctAnswer   Json
+  sortOrder       Int
   activity        Activity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
   answerOptions   AnswerOption[]
   responses       StudentResponse[]
+  skills          QuestionSkill[]
+  @@index([activityId, sortOrder])
+}
+
+model QuestionSkill {
+  questionId String
+  skillId    String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  @@id([questionId, skillId])
 }
 
 model AnswerOption {
@@ -225,6 +241,11 @@ model SkillMastery {
   skillId          String
   correctResponses Int            @default(0)
   totalResponses   Int            @default(0)
+  recentCorrectResponses Int       @default(0)
+  recentResponses  Int            @default(0)
+  masteredAt       DateTime?
+  lastAttemptedAt  DateTime?
+  nextReviewAt     DateTime?
   updatedAt        DateTime       @updatedAt
   student          StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   skill            Skill          @relation(fields: [skillId], references: [id], onDelete: Restrict)
@@ -234,12 +255,16 @@ model SkillMastery {
 model ConsentRecord {
   id          String         @id @default(uuid())
   studentId   String
-  grantedById String
+  grantedById String?
+  revokedById String?
   type        ConsentType
+  policyVersion String
+  evidenceMetadata Json?
   grantedAt   DateTime       @default(now())
   revokedAt   DateTime?
   student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  grantedBy   User           @relation(fields: [grantedById], references: [id], onDelete: Restrict)
+  grantedBy   User?          @relation(fields: [grantedById], references: [id], onDelete: SetNull)
+  revokedBy   User?          @relation("RevokedConsent", fields: [revokedById], references: [id], onDelete: SetNull)
   @@index([studentId, type, revokedAt])
 }
 
@@ -250,7 +275,9 @@ model ContentRevision {
   snapshot  Json
   status    PublicationStatus
   createdAt DateTime          @default(now())
-  lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  createdById String?
+  lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  createdBy User?            @relation(fields: [createdById], references: [id], onDelete: SetNull)
   @@unique([lessonId, version])
 }
 
@@ -264,4 +291,5 @@ model AuditLog {
   createdAt  DateTime @default(now())
   actor      User?    @relation("ActorAuditEvents", fields: [actorId], references: [id], onDelete: SetNull)
   @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
 }
